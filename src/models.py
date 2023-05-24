@@ -8,26 +8,51 @@ from eralchemy2 import render_er
 
 Base = declarative_base()
 
-class Person(Base):
-    __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
+class Usuario(Base):
+    __tablename__ = 'usuarios'
+    
     id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+    nombre_usuario = Column(String(50), unique=True)
+    contraseña = Column(String(50))
+    correo_electronico = Column(String(100))
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    
+    publicaciones = relationship('Publicacion', backref='usuario', lazy=True)
+    seguidores = relationship('RelacionSeguidor', foreign_keys='RelacionSeguidor.usuario_id', backref='usuario', lazy=True)
+    seguidos = relationship('RelacionSeguidor', foreign_keys='RelacionSeguidor.seguido_id', backref='seguido', lazy=True)
+    
 
-class Address(Base):
-    __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+class Publicacion(Base):
+    __tablename__ = 'publicaciones'
+    
     id = Column(Integer, primary_key=True)
-    street_name = Column(String(250))
-    street_number = Column(String(250))
-    post_code = Column(String(250), nullable=False)
-    person_id = Column(Integer, ForeignKey('person.id'))
-    person = relationship(Person)
+    contenido = Column(String(280))
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    ubicacion = Column(String(100))
+    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
+    
+    comentarios = relationship('Comentario', backref='publicacion', lazy=True)
 
-    def to_dict(self):
-        return {}
+
+class Comentario(Base):
+    __tablename__ = 'comentarios'
+    
+    id = Column(Integer, primary_key=True)
+    contenido = Column(String(280))
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
+    publicacion_id = Column(Integer, ForeignKey('publicaciones.id'))
+
+
+class RelacionSeguidor(Base):
+    __tablename__ = 'relaciones_seguidores'
+    
+    id = Column(Integer, primary_key=True)
+    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
+    seguido_id = Column(Integer, ForeignKey('usuarios.id'))
+    fecha_seguimiento = Column(DateTime, default=datetime.utcnow)
+
+Base.metadata.create_all(bind=engine)
 
 ## Draw from SQLAlchemy base
 try:
